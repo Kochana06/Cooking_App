@@ -1,0 +1,1578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cooking To-Do Planner | Your Daily Meal Companion</title>
+  <meta name="description" content="Generate a personalized daily cooking plan based on your dietary preferences, available ingredients, budget, and cooking time. Includes grocery list, substitutions, budget analysis, and timeline." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    /* ====================================================
+       DESIGN TOKENS
+    ==================================================== */
+    :root {
+      --bg-base:        #08080f;
+      --bg-surface:     #10101c;
+      --bg-elevated:    #18182a;
+      --glass-bg:       rgba(255,255,255,0.04);
+      --glass-bg-hover: rgba(255,255,255,0.07);
+      --border:         rgba(255,255,255,0.08);
+      --border-active:  rgba(139,92,246,0.55);
+
+      --text-1: #f0f0ff;
+      --text-2: #9898b8;
+      --text-3: #55557a;
+
+      --violet:  #8b5cf6;
+      --cyan:    #06b6d4;
+      --emerald: #10b981;
+      --amber:   #f59e0b;
+      --rose:    #f43f5e;
+      --pink:    #ec4899;
+
+      --grad-brand:  linear-gradient(135deg, #8b5cf6 0%, #06b6d4 100%);
+      --grad-bg:     radial-gradient(ellipse 80% 50% at 50% -10%, rgba(139,92,246,.18) 0%, transparent 70%);
+
+      --r-sm: 8px;
+      --r-md: 14px;
+      --r-lg: 22px;
+      --r-xl: 30px;
+
+      --shadow-md: 0 8px 32px rgba(0,0,0,.45);
+      --shadow-lg: 0 20px 60px rgba(0,0,0,.6);
+      --glow:      0 0 28px rgba(139,92,246,.22);
+
+      --t-fast:   150ms ease;
+      --t-normal: 260ms ease;
+      --t-slow:   420ms ease;
+    }
+
+    /* ====================================================
+       RESET & BASE
+    ==================================================== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-base);
+      background-image: var(--grad-bg);
+      color: var(--text-1);
+      min-height: 100vh;
+      line-height: 1.65;
+      overflow-x: hidden;
+    }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg-surface); }
+    ::-webkit-scrollbar-thumb { background: var(--violet); border-radius: 3px; }
+    h1,h2,h3,h4 { line-height: 1.2; font-weight: 700; }
+    img, svg { display: block; }
+
+    /* ====================================================
+       GLASSMORPHISM CARD
+    ==================================================== */
+    .glass {
+      background: var(--glass-bg);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid var(--border);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-md);
+      transition: border-color var(--t-normal), box-shadow var(--t-normal);
+    }
+    .glass:hover {
+      border-color: rgba(139,92,246,.22);
+      box-shadow: var(--shadow-md), var(--glow);
+    }
+
+    /* ====================================================
+       HEADER
+    ==================================================== */
+    .site-header {
+      position: relative;
+      padding: 72px 24px 52px;
+      text-align: center;
+      overflow: hidden;
+    }
+    .site-header::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(139,92,246,.16) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    /* decorative orbs */
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      opacity: .35;
+    }
+    .orb-1 { width: 340px; height: 340px; background: #8b5cf6; top: -120px; left: -80px; }
+    .orb-2 { width: 280px; height: 280px; background: #06b6d4; top: -60px; right: -60px; }
+
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 18px;
+      background: rgba(139,92,246,.12);
+      border: 1px solid rgba(139,92,246,.3);
+      border-radius: 50px;
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--violet);
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      margin-bottom: 22px;
+      animation: fadeDown .6s ease both;
+    }
+    .header-title {
+      font-size: clamp(2rem, 5.5vw, 3.6rem);
+      font-weight: 800;
+      background: var(--grad-brand);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+      animation: fadeDown .72s ease both;
+    }
+    .header-sub {
+      font-size: clamp(.95rem, 1.8vw, 1.15rem);
+      color: var(--text-2);
+      max-width: 580px;
+      margin: 0 auto;
+      animation: fadeDown .84s ease both;
+    }
+
+    /* ====================================================
+       LAYOUT
+    ==================================================== */
+    .container {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 24px 100px;
+    }
+
+    /* ====================================================
+       SECTION HEADER
+    ==================================================== */
+    .sec-hdr {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 26px;
+    }
+    .sec-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--r-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.25rem;
+      flex-shrink: 0;
+    }
+    .ic-violet  { background: rgba(139,92,246,.15); }
+    .ic-cyan    { background: rgba(6,182,212,.15); }
+    .ic-emerald { background: rgba(16,185,129,.15); }
+    .ic-amber   { background: rgba(245,158,11,.15); }
+    .ic-pink    { background: rgba(236,72,153,.15); }
+
+    .sec-title { font-size: 1.25rem; font-weight: 700; }
+    .sec-sub   { font-size: .82rem; color: var(--text-3); margin-top: 2px; }
+
+    /* ====================================================
+       FORM CARD
+    ==================================================== */
+    .form-card { padding: 34px; margin-bottom: 28px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 20px;
+      margin-bottom: 22px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 8px; }
+    .form-label {
+      font-size: .78rem;
+      font-weight: 600;
+      color: var(--text-2);
+      letter-spacing: .07em;
+      text-transform: uppercase;
+    }
+    .form-input, .form-select, .form-textarea {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      color: var(--text-1);
+      font-family: inherit;
+      font-size: .95rem;
+      padding: 11px 15px;
+      transition: border-color var(--t-fast), box-shadow var(--t-fast);
+      outline: none;
+      width: 100%;
+      appearance: none;
+    }
+    .form-select {
+      cursor: pointer;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239898b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 13px center;
+      padding-right: 42px;
+    }
+    .form-select option { background: var(--bg-surface); }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 3px rgba(139,92,246,.12);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--text-3); }
+    .form-textarea { resize: vertical; min-height: 96px; }
+
+    /* Meal type checkboxes */
+    .checkbox-row { display: flex; flex-wrap: wrap; gap: 10px; }
+    .cb-wrap { position: relative; }
+    .cb-wrap input[type="checkbox"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .cb-wrap label {
+      display: flex; align-items: center; gap: 8px;
+      padding: 9px 20px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      font-size: .88rem; font-weight: 500;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: all var(--t-fast);
+      user-select: none;
+    }
+    .cb-wrap input:checked + label {
+      background: rgba(139,92,246,.16);
+      border-color: var(--violet);
+      color: #c4b5fd;
+    }
+    .cb-wrap label:hover { border-color: rgba(139,92,246,.35); color: var(--text-1); }
+    .cb-wrap input:focus-visible + label { outline: 2px solid var(--violet); outline-offset: 3px; }
+
+    /* Error message */
+    .error-msg {
+      display: none;
+      margin-top: 16px;
+      padding: 11px 16px;
+      background: rgba(244,63,94,.1);
+      border: 1px solid rgba(244,63,94,.3);
+      border-radius: var(--r-sm);
+      color: #fb7185;
+      font-size: .875rem;
+    }
+    .error-msg.show { display: block; }
+
+    /* ====================================================
+       GENERATE BUTTON
+    ==================================================== */
+    .gen-wrap {
+      display: flex;
+      justify-content: center;
+      margin: 0 0 36px;
+    }
+    .gen-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      padding: 15px 52px;
+      background: var(--grad-brand);
+      border: none;
+      border-radius: 50px;
+      color: #fff;
+      font-family: inherit;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 28px rgba(139,92,246,.45);
+      transition: transform var(--t-fast), box-shadow var(--t-fast), opacity var(--t-fast);
+      position: relative;
+      overflow: hidden;
+    }
+    .gen-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,.15), transparent);
+      opacity: 0;
+      transition: opacity var(--t-fast);
+    }
+    .gen-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(139,92,246,.55); }
+    .gen-btn:hover::after { opacity: 1; }
+    .gen-btn:active { transform: translateY(0); }
+    .gen-btn:focus-visible { outline: 2px solid var(--violet); outline-offset: 4px; }
+    .gen-btn.busy { opacity: .7; pointer-events: none; }
+
+    /* ====================================================
+       RESULTS SECTION
+    ==================================================== */
+    #results { display: none; }
+    #results.show { display: block; }
+
+    .result-block {
+      padding: 30px;
+      margin-bottom: 24px;
+    }
+
+    /* ====================================================
+       MEAL PLAN GRID
+    ==================================================== */
+    .meal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+      gap: 20px;
+    }
+    .meal-card {
+      padding: 26px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp .5s ease both;
+    }
+    .meal-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      border-radius: var(--r-lg) var(--r-lg) 0 0;
+    }
+    .meal-card.breakfast::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+    .meal-card.lunch::before     { background: linear-gradient(90deg, #10b981, #34d399); }
+    .meal-card.dinner::before    { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+    .meal-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 50px;
+      font-size: .72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      margin-bottom: 13px;
+    }
+    .breakfast .meal-badge { background: rgba(245,158,11,.14); color: #f59e0b; }
+    .lunch     .meal-badge { background: rgba(16,185,129,.14); color: #10b981; }
+    .dinner    .meal-badge { background: rgba(139,92,246,.14); color: #a78bfa; }
+
+    .meal-name { font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+    .meal-desc { font-size: .83rem; color: var(--text-2); margin-bottom: 16px; line-height: 1.55; }
+    .meal-meta { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 16px; }
+    .meal-meta-item { display: flex; align-items: center; gap: 5px; font-size: .78rem; color: var(--text-3); }
+    .ing-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+    .ing-tag {
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: .73rem;
+      border: 1px solid var(--border);
+      transition: border-color var(--t-fast), color var(--t-fast);
+    }
+    .ing-tag.have     { border-color: rgba(16,185,129,.3); color: #6ee7b7; background: rgba(16,185,129,.08); }
+    .ing-tag.need     { color: var(--text-2); }
+    .ing-label        { font-size: .75rem; font-weight: 600; color: var(--text-3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+
+    /* ====================================================
+       GROCERY LIST
+    ==================================================== */
+    .grocery-stats {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .grocery-pill {
+      padding: 4px 14px;
+      border-radius: 50px;
+      font-size: .8rem;
+      font-weight: 600;
+      background: rgba(16,185,129,.12);
+      border: 1px solid rgba(16,185,129,.28);
+      color: #34d399;
+    }
+    .grocery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(195px, 1fr));
+      gap: 14px;
+    }
+    .grocery-cat {
+      padding: 16px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+    }
+    .grocery-cat-title {
+      font-size: .76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding-bottom: 8px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .grocery-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: .83rem;
+      color: var(--text-2);
+    }
+    .g-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 7px;
+    }
+
+    /* ====================================================
+       SUBSTITUTIONS
+    ==================================================== */
+    .sub-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 14px;
+    }
+    .sub-card {
+      padding: 20px;
+      background: rgba(255,255,255,.025);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      transition: border-color var(--t-fast);
+    }
+    .sub-card:hover { border-color: rgba(6,182,212,.3); }
+    .sub-original { font-size: .98rem; font-weight: 700; margin-bottom: 4px; }
+    .sub-note { font-size: .77rem; color: var(--text-3); margin-bottom: 12px; }
+    .sub-list { display: flex; flex-direction: column; gap: 7px; }
+    .sub-item { display: flex; align-items: flex-start; gap: 8px; font-size: .83rem; color: var(--text-2); }
+    .sub-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); flex-shrink: 0; margin-top: 7px; }
+
+    /* ====================================================
+       BUDGET ANALYSIS
+    ==================================================== */
+    .budget-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .bstat {
+      padding: 18px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: var(--r-md);
+      text-align: center;
+    }
+    .bstat-val { font-size: 1.9rem; font-weight: 800; margin-bottom: 4px; }
+    .bstat-lbl { font-size: .77rem; color: var(--text-3); }
+    .bar-track {
+      background: rgba(255,255,255,.07);
+      border-radius: 50px;
+      height: 8px;
+      margin: 18px 0 14px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 50px;
+      width: 0;
+      transition: width 1.1s cubic-bezier(.4,0,.2,1);
+    }
+    .budget-verdict {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 22px;
+      border-radius: 50px;
+      font-size: .88rem;
+      font-weight: 600;
+      margin-bottom: 22px;
+    }
+    .verdict-ok     { background: rgba(16,185,129,.13); border: 1px solid rgba(16,185,129,.3); color: #34d399; }
+    .verdict-close  { background: rgba(245,158,11,.13); border: 1px solid rgba(245,158,11,.3); color: #fbbf24; }
+    .verdict-over   { background: rgba(244,63,94,.13);  border: 1px solid rgba(244,63,94,.3);  color: #fb7185; }
+    .budget-breakdown-label {
+      font-size: .76rem; font-weight: 700; color: var(--text-3);
+      text-transform: uppercase; letter-spacing: .09em; margin-bottom: 10px;
+    }
+    .cost-list { display: flex; flex-direction: column; gap: 8px; }
+    .cost-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: rgba(255,255,255,.03);
+      border-radius: var(--r-sm);
+      font-size: .87rem;
+    }
+    .cost-price { font-weight: 600; color: var(--text-2); }
+
+    /* ====================================================
+       TIMELINE
+    ==================================================== */
+    .timeline { position: relative; padding-left: 26px; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 9px; top: 6px; bottom: 6px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--violet), var(--cyan), var(--emerald));
+      border-radius: 2px;
+    }
+    .tl-group { margin-bottom: 30px; }
+    .tl-group-title {
+      font-size: .85rem; font-weight: 700;
+      color: var(--text-2);
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      margin-bottom: 12px;
+      margin-left: -26px;
+      padding-left: 44px;
+      position: relative;
+    }
+    .tl-group-title::before {
+      content: '';
+      position: absolute;
+      left: 2px; top: 50%;
+      transform: translateY(-50%);
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--violet);
+      background: var(--bg-base);
+      z-index: 1;
+    }
+    .tl-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 11px 16px;
+      background: rgba(255,255,255,.03);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      margin-bottom: 8px;
+      transition: border-color var(--t-fast), background var(--t-fast);
+    }
+    .tl-item:hover { border-color: rgba(139,92,246,.25); background: rgba(139,92,246,.05); }
+    .tl-time { font-size: .72rem; font-weight: 700; color: var(--violet); white-space: nowrap; min-width: 62px; padding-top: 1px; }
+    .tl-task { font-size: .85rem; color: var(--text-2); }
+
+    /* ====================================================
+       EMPTY STATE
+    ==================================================== */
+    .empty {
+      text-align: center;
+      padding: 44px 24px;
+      color: var(--text-3);
+    }
+    .empty-icon { font-size: 2.8rem; margin-bottom: 10px; }
+
+    /* ====================================================
+       ANIMATIONS
+    ==================================================== */
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(22px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .results-appear { animation: fadeUp .55s ease both; }
+
+    /* ====================================================
+       RESPONSIVE
+    ==================================================== */
+    @media (max-width: 768px) {
+      .site-header { padding: 48px 16px 36px; }
+      .container { padding: 0 16px 60px; }
+      .form-card, .result-block { padding: 20px; }
+      .form-grid { grid-template-columns: 1fr 1fr; }
+      .meal-grid { grid-template-columns: 1fr; }
+      .grocery-grid { grid-template-columns: 1fr 1fr; }
+      .budget-stats { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 480px) {
+      .form-grid { grid-template-columns: 1fr; }
+      .grocery-grid { grid-template-columns: 1fr; }
+      .budget-stats { grid-template-columns: 1fr 1fr; }
+      .sub-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ======================================================
+       HEADER
+  ====================================================== -->
+  <header class="site-header" role="banner">
+    <div class="orb orb-1" aria-hidden="true"></div>
+    <div class="orb orb-2" aria-hidden="true"></div>
+    <div class="header-badge" aria-label="Smart Meal Planning Tool">🍳 Smart Meal Planning</div>
+    <h1 class="header-title">Cooking To-Do Planner</h1>
+    <p class="header-sub">
+      Build your personalized daily meal plan — powered by your preferences, budget,
+      available ingredients, and cooking time.
+    </p>
+  </header>
+
+  <!-- ======================================================
+       MAIN
+  ====================================================== -->
+  <main class="container" id="main" role="main">
+
+    <!-- INPUT FORM -->
+    <section aria-label="Meal Planning Preferences">
+      <div class="glass form-card">
+        <div class="sec-hdr">
+          <div class="sec-icon ic-violet" aria-hidden="true">⚙️</div>
+          <div>
+            <h2 class="sec-title">Your Preferences</h2>
+            <p class="sec-sub">Fill in your details to generate a tailored plan</p>
+          </div>
+        </div>
+
+        <form id="plannerForm" novalidate>
+
+          <div class="form-grid">
+            <!-- People -->
+            <div class="form-group">
+              <label class="form-label" for="numPeople">Number of People</label>
+              <input type="number" id="numPeople" class="form-input"
+                min="1" max="50" value="2" placeholder="e.g. 2"
+                aria-required="true" />
+            </div>
+            <!-- Budget -->
+            <div class="form-group">
+              <label class="form-label" for="budgetLevel">Budget Level</label>
+              <select id="budgetLevel" class="form-select">
+                <option value="low">🟢 Low Budget</option>
+                <option value="medium" selected>🟡 Medium Budget</option>
+                <option value="high">🟣 High Budget</option>
+              </select>
+            </div>
+            <!-- Time -->
+            <div class="form-group">
+              <label class="form-label" for="cookTime">Cooking Time (min/day)</label>
+              <input type="number" id="cookTime" class="form-input"
+                min="20" max="600" value="120" placeholder="e.g. 120"
+                aria-required="true" />
+            </div>
+            <!-- Diet -->
+            <div class="form-group">
+              <label class="form-label" for="dietPref">Dietary Preference</label>
+              <select id="dietPref" class="form-select">
+                <option value="vegetarian">🥗 Vegetarian</option>
+                <option value="vegan">🌱 Vegan</option>
+                <option value="non-vegetarian" selected>🍗 Non-Vegetarian</option>
+                <option value="keto">🥑 Keto</option>
+                <option value="high-protein">💪 High Protein</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Meal types -->
+          <div class="form-group" style="margin-bottom:20px;">
+            <span class="form-label" id="mealTypesLabel">Meal Types Required</span>
+            <div class="checkbox-row" role="group" aria-labelledby="mealTypesLabel">
+              <div class="cb-wrap">
+                <input type="checkbox" id="cbBreakfast" name="meals" value="breakfast" checked />
+                <label for="cbBreakfast">🌅 Breakfast</label>
+              </div>
+              <div class="cb-wrap">
+                <input type="checkbox" id="cbLunch" name="meals" value="lunch" checked />
+                <label for="cbLunch">☀️ Lunch</label>
+              </div>
+              <div class="cb-wrap">
+                <input type="checkbox" id="cbDinner" name="meals" value="dinner" checked />
+                <label for="cbDinner">🌙 Dinner</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Available ingredients -->
+          <div class="form-group">
+            <label class="form-label" for="avIngredients">Ingredients Available at Home</label>
+            <textarea id="avIngredients" class="form-textarea"
+              placeholder="Enter ingredients separated by commas — e.g. eggs, milk, garlic, salt, olive oil, onion, butter"
+              aria-describedby="ingHelp"></textarea>
+            <small id="ingHelp" style="font-size:.77rem;color:var(--text-3);">
+              💡 Matching ingredients will be highlighted in your meal plan and excluded from the grocery list
+            </small>
+          </div>
+
+          <div id="errMsg" class="error-msg" role="alert" aria-live="polite"></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- GENERATE BUTTON -->
+    <div class="gen-wrap">
+      <button id="genBtn" class="gen-btn" type="button"
+        aria-label="Generate your personalized cooking plan">
+        <span aria-hidden="true">✨</span>
+        <span id="genBtnTxt">Generate My Cooking Plan</span>
+      </button>
+    </div>
+
+    <!-- RESULTS -->
+    <div id="results" aria-live="polite">
+
+      <!-- Meal Plan -->
+      <section aria-labelledby="mealPlanHeading">
+        <div class="glass result-block results-appear">
+          <div class="sec-hdr">
+            <div class="sec-icon ic-amber" aria-hidden="true">🍽️</div>
+            <div>
+              <h2 class="sec-title" id="mealPlanHeading">Your Daily Meal Plan</h2>
+              <p class="sec-sub">Meals selected to match your profile</p>
+            </div>
+          </div>
+          <div id="mealPlanOut" class="meal-grid"></div>
+        </div>
+      </section>
+
+      <!-- Grocery List -->
+      <section aria-labelledby="groceryHeading">
+        <div class="glass result-block results-appear">
+          <div class="sec-hdr">
+            <div class="sec-icon ic-emerald" aria-hidden="true">🛒</div>
+            <div>
+              <h2 class="sec-title" id="groceryHeading">Grocery List</h2>
+              <p class="sec-sub">Items you need to pick up</p>
+            </div>
+          </div>
+          <div id="groceryOut"></div>
+        </div>
+      </section>
+
+      <!-- Substitutions -->
+      <section aria-labelledby="subHeading">
+        <div class="glass result-block results-appear">
+          <div class="sec-hdr">
+            <div class="sec-icon ic-cyan" aria-hidden="true">🔄</div>
+            <div>
+              <h2 class="sec-title" id="subHeading">Ingredient Substitutions</h2>
+              <p class="sec-sub">Smart alternatives for key ingredients</p>
+            </div>
+          </div>
+          <div id="subOut"></div>
+        </div>
+      </section>
+
+      <!-- Budget Analysis -->
+      <section aria-labelledby="budgetHeading">
+        <div class="glass result-block results-appear">
+          <div class="sec-hdr">
+            <div class="sec-icon ic-violet" aria-hidden="true">💰</div>
+            <div>
+              <h2 class="sec-title" id="budgetHeading">Budget Analysis</h2>
+              <p class="sec-sub">Estimated cost and feasibility check</p>
+            </div>
+          </div>
+          <div id="budgetOut"></div>
+        </div>
+      </section>
+
+      <!-- Timeline -->
+      <section aria-labelledby="tlHeading">
+        <div class="glass result-block results-appear">
+          <div class="sec-hdr">
+            <div class="sec-icon ic-pink" aria-hidden="true">⏰</div>
+            <div>
+              <h2 class="sec-title" id="tlHeading">Cooking Timeline</h2>
+              <p class="sec-sub">Your step-by-step cooking schedule for the day</p>
+            </div>
+          </div>
+          <div id="tlOut"></div>
+        </div>
+      </section>
+
+    </div><!-- /results -->
+  </main>
+
+  <!-- ======================================================
+       JAVASCRIPT
+  ====================================================== -->
+  <script>
+  'use strict';
+
+  /* =====================================================
+     MEAL DATABASE
+  ===================================================== */
+  const DB = {
+    breakfast: [
+      { id:'b1', name:'Avocado Toast with Poached Eggs', prepTime:15, cookTime:15, totalTime:30,
+        diet:['vegetarian','high-protein'], budget:'medium', cost:5.5, servings:2,
+        desc:'Creamy avocado on toasted sourdough topped with perfectly poached eggs and chilli flakes.',
+        ingredients:[
+          {name:'sourdough bread',  cat:'grains',   qty:'4 slices'},
+          {name:'avocado',          cat:'vegetables',qty:'2'},
+          {name:'eggs',             cat:'protein',   qty:'4'},
+          {name:'lemon',            cat:'fruits',    qty:'1'},
+          {name:'red pepper flakes',cat:'spices',    qty:'1 tsp'},
+          {name:'salt',             cat:'spices',    qty:'to taste'},
+          {name:'black pepper',     cat:'spices',    qty:'to taste'},
+          {name:'olive oil',        cat:'others',    qty:'1 tbsp'},
+        ]},
+      { id:'b2', name:'Overnight Oats with Berries', prepTime:10, cookTime:0, totalTime:10,
+        diet:['vegetarian','vegan'], budget:'low', cost:2.5, servings:2,
+        desc:'Nutritious overnight oats topped with fresh mixed berries and honey drizzle.',
+        ingredients:[
+          {name:'rolled oats',    cat:'grains',   qty:'1 cup'},
+          {name:'almond milk',    cat:'dairy',    qty:'1.5 cups'},
+          {name:'mixed berries',  cat:'fruits',   qty:'1 cup'},
+          {name:'chia seeds',     cat:'protein',  qty:'2 tbsp'},
+          {name:'honey',          cat:'others',   qty:'2 tbsp'},
+          {name:'vanilla extract',cat:'spices',   qty:'1 tsp'},
+        ]},
+      { id:'b3', name:'Scrambled Eggs with Vegetables', prepTime:10, cookTime:10, totalTime:20,
+        diet:['vegetarian','keto','high-protein'], budget:'low', cost:3.0, servings:2,
+        desc:'Fluffy scrambled eggs loaded with colourful vegetables and melted cheese.',
+        ingredients:[
+          {name:'eggs',        cat:'protein',   qty:'4'},
+          {name:'bell pepper', cat:'vegetables',qty:'1'},
+          {name:'spinach',     cat:'vegetables',qty:'1 cup'},
+          {name:'onion',       cat:'vegetables',qty:'1 small'},
+          {name:'butter',      cat:'dairy',     qty:'1 tbsp'},
+          {name:'cheddar cheese',cat:'dairy',   qty:'¼ cup'},
+          {name:'salt',        cat:'spices',    qty:'to taste'},
+          {name:'black pepper',cat:'spices',    qty:'to taste'},
+        ]},
+      { id:'b4', name:'Greek Yogurt Parfait', prepTime:10, cookTime:0, totalTime:10,
+        diet:['vegetarian','high-protein'], budget:'low', cost:3.5, servings:2,
+        desc:'Layered Greek yogurt with crunchy granola, fresh berries, and a honey drizzle.',
+        ingredients:[
+          {name:'Greek yogurt', cat:'dairy', qty:'2 cups'},
+          {name:'granola',      cat:'grains',qty:'½ cup'},
+          {name:'strawberries', cat:'fruits',qty:'1 cup'},
+          {name:'blueberries',  cat:'fruits',qty:'½ cup'},
+          {name:'honey',        cat:'others',qty:'2 tbsp'},
+          {name:'almonds',      cat:'protein',qty:'¼ cup'},
+        ]},
+      { id:'b5', name:'Bacon and Eggs Breakfast Plate', prepTime:10, cookTime:15, totalTime:25,
+        diet:['non-vegetarian','keto','high-protein'], budget:'medium', cost:5.0, servings:2,
+        desc:'Classic breakfast with crispy bacon, sunny-side eggs, and roasted cherry tomatoes.',
+        ingredients:[
+          {name:'bacon',          cat:'protein',   qty:'6 strips'},
+          {name:'eggs',           cat:'protein',   qty:'4'},
+          {name:'butter',         cat:'dairy',     qty:'1 tbsp'},
+          {name:'cherry tomatoes',cat:'vegetables',qty:'1 cup'},
+          {name:'salt',           cat:'spices',    qty:'to taste'},
+          {name:'black pepper',   cat:'spices',    qty:'to taste'},
+          {name:'parsley',        cat:'spices',    qty:'2 tbsp'},
+        ]},
+      { id:'b6', name:'Protein Smoothie Bowl', prepTime:10, cookTime:0, totalTime:10,
+        diet:['vegan','high-protein'], budget:'medium', cost:4.0, servings:2,
+        desc:'Thick blended protein smoothie bowl topped with fresh fruits and crunchy granola.',
+        ingredients:[
+          {name:'protein powder',cat:'protein', qty:'2 scoops'},
+          {name:'banana',        cat:'fruits',  qty:'2'},
+          {name:'spinach',       cat:'vegetables',qty:'1 cup'},
+          {name:'almond milk',   cat:'dairy',   qty:'1 cup'},
+          {name:'peanut butter', cat:'protein', qty:'2 tbsp'},
+          {name:'chia seeds',    cat:'protein', qty:'2 tbsp'},
+          {name:'granola',       cat:'grains',  qty:'¼ cup'},
+          {name:'mixed berries', cat:'fruits',  qty:'½ cup'},
+        ]},
+      { id:'b7', name:'Keto Bacon Egg Muffins', prepTime:15, cookTime:20, totalTime:35,
+        diet:['keto','high-protein','non-vegetarian'], budget:'low', cost:4.0, servings:4,
+        desc:'Portable keto egg muffins packed with crispy bacon, cheese, and colourful vegetables.',
+        ingredients:[
+          {name:'eggs',         cat:'protein',   qty:'6'},
+          {name:'bacon',        cat:'protein',   qty:'4 strips'},
+          {name:'cheddar cheese',cat:'dairy',    qty:'½ cup'},
+          {name:'bell pepper',  cat:'vegetables',qty:'1'},
+          {name:'spinach',      cat:'vegetables',qty:'1 cup'},
+          {name:'salt',         cat:'spices',    qty:'to taste'},
+          {name:'black pepper', cat:'spices',    qty:'to taste'},
+        ]},
+      { id:'b8', name:'Coconut Chia Pudding', prepTime:10, cookTime:0, totalTime:10,
+        diet:['vegan','vegetarian'], budget:'low', cost:2.0, servings:2,
+        desc:'Creamy coconut chia pudding layered with fresh mango and a squeeze of lime.',
+        ingredients:[
+          {name:'chia seeds',    cat:'protein',qty:'6 tbsp'},
+          {name:'coconut milk',  cat:'dairy',  qty:'2 cups'},
+          {name:'mango',         cat:'fruits', qty:'1'},
+          {name:'maple syrup',   cat:'others', qty:'2 tbsp'},
+          {name:'vanilla extract',cat:'spices',qty:'1 tsp'},
+          {name:'lime',          cat:'fruits', qty:'1'},
+        ]},
+    ],
+    lunch: [
+      { id:'l1', name:'Grilled Chicken Caesar Salad', prepTime:15, cookTime:20, totalTime:35,
+        diet:['non-vegetarian','high-protein','keto'], budget:'medium', cost:8.0, servings:2,
+        desc:'Tender grilled chicken on crisp romaine with classic caesar dressing and shaved parmesan.',
+        ingredients:[
+          {name:'chicken breast',  cat:'protein',   qty:'400g'},
+          {name:'romaine lettuce', cat:'vegetables',qty:'1 head'},
+          {name:'parmesan cheese', cat:'dairy',     qty:'¼ cup'},
+          {name:'caesar dressing', cat:'others',    qty:'¼ cup'},
+          {name:'croutons',        cat:'grains',    qty:'½ cup'},
+          {name:'garlic',          cat:'spices',    qty:'2 cloves'},
+          {name:'lemon juice',     cat:'fruits',    qty:'2 tbsp'},
+          {name:'olive oil',       cat:'others',    qty:'2 tbsp'},
+        ]},
+      { id:'l2', name:'Vegetable Stir Fry with Rice', prepTime:15, cookTime:20, totalTime:35,
+        diet:['vegetarian','vegan'], budget:'low', cost:4.0, servings:2,
+        desc:'Colourful vegetable stir-fry with fluffy basmati rice in a ginger-soy glaze.',
+        ingredients:[
+          {name:'basmati rice', cat:'grains',   qty:'1 cup'},
+          {name:'broccoli',     cat:'vegetables',qty:'1 cup'},
+          {name:'carrots',      cat:'vegetables',qty:'2'},
+          {name:'bell pepper',  cat:'vegetables',qty:'1'},
+          {name:'snap peas',    cat:'vegetables',qty:'1 cup'},
+          {name:'soy sauce',    cat:'spices',   qty:'3 tbsp'},
+          {name:'garlic',       cat:'spices',   qty:'3 cloves'},
+          {name:'ginger',       cat:'spices',   qty:'1 tsp'},
+          {name:'sesame oil',   cat:'others',   qty:'1 tbsp'},
+        ]},
+      { id:'l3', name:'Red Lentil Soup', prepTime:10, cookTime:30, totalTime:40,
+        diet:['vegan','vegetarian','high-protein'], budget:'low', cost:3.5, servings:4,
+        desc:'Hearty, warming red lentil soup with aromatic spices and a bright lemon finish.',
+        ingredients:[
+          {name:'red lentils',     cat:'protein',   qty:'1.5 cups'},
+          {name:'onion',           cat:'vegetables',qty:'1'},
+          {name:'tomatoes',        cat:'vegetables',qty:'2'},
+          {name:'garlic',          cat:'spices',    qty:'3 cloves'},
+          {name:'cumin',           cat:'spices',    qty:'1 tsp'},
+          {name:'turmeric',        cat:'spices',    qty:'½ tsp'},
+          {name:'paprika',         cat:'spices',    qty:'1 tsp'},
+          {name:'vegetable broth', cat:'others',    qty:'4 cups'},
+          {name:'olive oil',       cat:'others',    qty:'2 tbsp'},
+          {name:'lemon juice',     cat:'fruits',    qty:'2 tbsp'},
+        ]},
+      { id:'l4', name:'Quinoa Power Bowl', prepTime:15, cookTime:20, totalTime:35,
+        diet:['vegetarian','vegan','high-protein'], budget:'medium', cost:6.0, servings:2,
+        desc:'Protein-rich quinoa bowl with roasted chickpeas, fresh veggies, and tangy feta.',
+        ingredients:[
+          {name:'quinoa',          cat:'grains',   qty:'1 cup'},
+          {name:'chickpeas',       cat:'protein',  qty:'1 can'},
+          {name:'cucumber',        cat:'vegetables',qty:'1'},
+          {name:'cherry tomatoes', cat:'vegetables',qty:'1 cup'},
+          {name:'feta cheese',     cat:'dairy',    qty:'¼ cup'},
+          {name:'olive oil',       cat:'others',   qty:'2 tbsp'},
+          {name:'lemon juice',     cat:'fruits',   qty:'2 tbsp'},
+          {name:'parsley',         cat:'spices',   qty:'¼ cup'},
+          {name:'salt',            cat:'spices',   qty:'to taste'},
+        ]},
+      { id:'l5', name:'Beef and Veggie Wraps', prepTime:15, cookTime:20, totalTime:35,
+        diet:['non-vegetarian','high-protein'], budget:'medium', cost:7.0, servings:2,
+        desc:'Savory seasoned beef wraps loaded with fresh vegetables and melted cheddar.',
+        ingredients:[
+          {name:'ground beef',    cat:'protein',   qty:'300g'},
+          {name:'flour tortillas',cat:'grains',    qty:'4'},
+          {name:'lettuce',        cat:'vegetables',qty:'1 cup'},
+          {name:'tomatoes',       cat:'vegetables',qty:'2'},
+          {name:'cheddar cheese', cat:'dairy',     qty:'½ cup'},
+          {name:'sour cream',     cat:'dairy',     qty:'¼ cup'},
+          {name:'garlic powder',  cat:'spices',    qty:'1 tsp'},
+          {name:'cumin',          cat:'spices',    qty:'1 tsp'},
+          {name:'onion',          cat:'vegetables',qty:'1'},
+        ]},
+      { id:'l6', name:'Chickpea Spinach Curry', prepTime:10, cookTime:25, totalTime:35,
+        diet:['vegan','vegetarian','high-protein'], budget:'low', cost:4.5, servings:2,
+        desc:'Rich chickpea curry with wilted spinach in a fragrant coconut-tomato sauce.',
+        ingredients:[
+          {name:'chickpeas',    cat:'protein',   qty:'2 cans'},
+          {name:'spinach',      cat:'vegetables',qty:'3 cups'},
+          {name:'tomatoes',     cat:'vegetables',qty:'2'},
+          {name:'onion',        cat:'vegetables',qty:'1'},
+          {name:'garlic',       cat:'spices',    qty:'3 cloves'},
+          {name:'ginger',       cat:'spices',    qty:'1 tsp'},
+          {name:'garam masala', cat:'spices',    qty:'1 tsp'},
+          {name:'cumin',        cat:'spices',    qty:'1 tsp'},
+          {name:'turmeric',     cat:'spices',    qty:'½ tsp'},
+          {name:'coconut milk', cat:'dairy',     qty:'½ cup'},
+          {name:'basmati rice', cat:'grains',    qty:'1 cup'},
+        ]},
+      { id:'l7', name:'Zucchini Noodles with Pesto', prepTime:15, cookTime:10, totalTime:25,
+        diet:['keto','vegetarian'], budget:'medium', cost:5.5, servings:2,
+        desc:'Light zucchini noodles tossed in vibrant basil pesto with cherry tomatoes.',
+        ingredients:[
+          {name:'zucchini',        cat:'vegetables',qty:'3 large'},
+          {name:'basil pesto',     cat:'others',    qty:'¼ cup'},
+          {name:'cherry tomatoes', cat:'vegetables',qty:'1 cup'},
+          {name:'parmesan cheese', cat:'dairy',     qty:'¼ cup'},
+          {name:'pine nuts',       cat:'protein',   qty:'¼ cup'},
+          {name:'garlic',          cat:'spices',    qty:'2 cloves'},
+          {name:'olive oil',       cat:'others',    qty:'2 tbsp'},
+          {name:'salt',            cat:'spices',    qty:'to taste'},
+        ]},
+      { id:'l8', name:'Tuna Avocado Salad', prepTime:10, cookTime:0, totalTime:10,
+        diet:['non-vegetarian','keto','high-protein'], budget:'low', cost:4.5, servings:2,
+        desc:'Protein-packed tuna salad with creamy avocado and a bright lemon-dill dressing.',
+        ingredients:[
+          {name:'canned tuna', cat:'protein',   qty:'2 cans'},
+          {name:'avocado',     cat:'vegetables',qty:'1'},
+          {name:'celery',      cat:'vegetables',qty:'2 stalks'},
+          {name:'red onion',   cat:'vegetables',qty:'½'},
+          {name:'Greek yogurt',cat:'dairy',     qty:'2 tbsp'},
+          {name:'lemon juice', cat:'fruits',    qty:'2 tbsp'},
+          {name:'dill',        cat:'spices',    qty:'1 tsp'},
+          {name:'salt',        cat:'spices',    qty:'to taste'},
+          {name:'black pepper',cat:'spices',    qty:'to taste'},
+        ]},
+    ],
+    dinner: [
+      { id:'d1', name:'Grilled Salmon with Asparagus', prepTime:10, cookTime:25, totalTime:35,
+        diet:['non-vegetarian','keto','high-protein'], budget:'high', cost:15.0, servings:2,
+        desc:'Pan-seared salmon fillets with roasted asparagus and a lemon-dill butter sauce.',
+        ingredients:[
+          {name:'salmon fillets',cat:'protein',   qty:'400g'},
+          {name:'asparagus',     cat:'vegetables',qty:'300g'},
+          {name:'lemon',         cat:'fruits',    qty:'2'},
+          {name:'garlic',        cat:'spices',    qty:'3 cloves'},
+          {name:'olive oil',     cat:'others',    qty:'3 tbsp'},
+          {name:'dill',          cat:'spices',    qty:'2 tbsp'},
+          {name:'salt',          cat:'spices',    qty:'to taste'},
+          {name:'black pepper',  cat:'spices',    qty:'to taste'},
+          {name:'butter',        cat:'dairy',     qty:'2 tbsp'},
+        ]},
+      { id:'d2', name:'Pasta Primavera', prepTime:15, cookTime:25, totalTime:40,
+        diet:['vegetarian'], budget:'medium', cost:6.0, servings:2,
+        desc:'Vibrant pasta loaded with seasonal vegetables in a fragrant garlic and olive oil sauce.',
+        ingredients:[
+          {name:'pasta',           cat:'grains',   qty:'300g'},
+          {name:'bell pepper',     cat:'vegetables',qty:'2'},
+          {name:'zucchini',        cat:'vegetables',qty:'1'},
+          {name:'cherry tomatoes', cat:'vegetables',qty:'1 cup'},
+          {name:'broccoli',        cat:'vegetables',qty:'1 cup'},
+          {name:'garlic',          cat:'spices',    qty:'3 cloves'},
+          {name:'olive oil',       cat:'others',    qty:'3 tbsp'},
+          {name:'parmesan cheese', cat:'dairy',     qty:'½ cup'},
+          {name:'basil',           cat:'spices',    qty:'¼ cup'},
+          {name:'salt',            cat:'spices',    qty:'to taste'},
+        ]},
+      { id:'d3', name:'Chicken Tikka Masala', prepTime:20, cookTime:35, totalTime:55,
+        diet:['non-vegetarian','high-protein'], budget:'medium', cost:9.0, servings:2,
+        desc:'Classic Indian-inspired chicken in a rich, aromatic tomato-cream sauce with basmati rice.',
+        ingredients:[
+          {name:'chicken breast',cat:'protein',   qty:'500g'},
+          {name:'Greek yogurt',  cat:'dairy',     qty:'½ cup'},
+          {name:'tomato sauce',  cat:'vegetables',qty:'1 cup'},
+          {name:'heavy cream',   cat:'dairy',     qty:'¼ cup'},
+          {name:'onion',         cat:'vegetables',qty:'1'},
+          {name:'garlic',        cat:'spices',    qty:'4 cloves'},
+          {name:'ginger',        cat:'spices',    qty:'1 tbsp'},
+          {name:'garam masala',  cat:'spices',    qty:'2 tsp'},
+          {name:'cumin',         cat:'spices',    qty:'1 tsp'},
+          {name:'turmeric',      cat:'spices',    qty:'1 tsp'},
+          {name:'basmati rice',  cat:'grains',    qty:'1.5 cups'},
+        ]},
+      { id:'d4', name:'Beef Stir Fry with Broccoli', prepTime:15, cookTime:20, totalTime:35,
+        diet:['non-vegetarian','high-protein'], budget:'medium', cost:10.0, servings:2,
+        desc:'Tender beef and crispy broccoli in a savory umami sauce served over steamed rice.',
+        ingredients:[
+          {name:'beef sirloin', cat:'protein',   qty:'400g'},
+          {name:'broccoli',     cat:'vegetables',qty:'2 cups'},
+          {name:'soy sauce',    cat:'spices',    qty:'3 tbsp'},
+          {name:'oyster sauce', cat:'spices',    qty:'2 tbsp'},
+          {name:'garlic',       cat:'spices',    qty:'3 cloves'},
+          {name:'ginger',       cat:'spices',    qty:'1 tsp'},
+          {name:'sesame oil',   cat:'others',    qty:'1 tbsp'},
+          {name:'cornstarch',   cat:'others',    qty:'2 tsp'},
+          {name:'basmati rice', cat:'grains',    qty:'1.5 cups'},
+        ]},
+      { id:'d5', name:'Vegetable Coconut Curry', prepTime:15, cookTime:30, totalTime:45,
+        diet:['vegan','vegetarian'], budget:'low', cost:5.5, servings:2,
+        desc:'Aromatic coconut curry with hearty vegetables and chickpeas over fluffy basmati rice.',
+        ingredients:[
+          {name:'coconut milk',     cat:'dairy',    qty:'1 can'},
+          {name:'mixed vegetables', cat:'vegetables',qty:'3 cups'},
+          {name:'chickpeas',        cat:'protein',  qty:'1 can'},
+          {name:'onion',            cat:'vegetables',qty:'1'},
+          {name:'garlic',           cat:'spices',   qty:'3 cloves'},
+          {name:'ginger',           cat:'spices',   qty:'1 tsp'},
+          {name:'curry powder',     cat:'spices',   qty:'2 tsp'},
+          {name:'turmeric',         cat:'spices',   qty:'1 tsp'},
+          {name:'tomatoes',         cat:'vegetables',qty:'2'},
+          {name:'basmati rice',     cat:'grains',   qty:'1.5 cups'},
+        ]},
+      { id:'d6', name:'Stuffed Bell Peppers', prepTime:20, cookTime:35, totalTime:55,
+        diet:['vegetarian','keto'], budget:'medium', cost:7.0, servings:2,
+        desc:'Colourful bell peppers stuffed with seasoned cauliflower rice and bubbling mozzarella.',
+        ingredients:[
+          {name:'bell peppers',     cat:'vegetables',qty:'4 large'},
+          {name:'cauliflower rice', cat:'vegetables',qty:'2 cups'},
+          {name:'mozzarella cheese',cat:'dairy',    qty:'1 cup'},
+          {name:'onion',            cat:'vegetables',qty:'1'},
+          {name:'garlic',           cat:'spices',   qty:'2 cloves'},
+          {name:'tomato sauce',     cat:'vegetables',qty:'½ cup'},
+          {name:'Italian seasoning',cat:'spices',   qty:'1 tsp'},
+          {name:'salt',             cat:'spices',   qty:'to taste'},
+          {name:'black pepper',     cat:'spices',   qty:'to taste'},
+        ]},
+      { id:'d7', name:'Shrimp Garlic Butter Pasta', prepTime:15, cookTime:20, totalTime:35,
+        diet:['non-vegetarian','high-protein'], budget:'high', cost:12.0, servings:2,
+        desc:'Succulent shrimp tossed with linguine in a rich garlic butter and lemon sauce.',
+        ingredients:[
+          {name:'shrimp',           cat:'protein', qty:'400g'},
+          {name:'linguine pasta',   cat:'grains',  qty:'300g'},
+          {name:'garlic',           cat:'spices',  qty:'5 cloves'},
+          {name:'butter',           cat:'dairy',   qty:'4 tbsp'},
+          {name:'parsley',          cat:'spices',  qty:'¼ cup'},
+          {name:'lemon juice',      cat:'fruits',  qty:'2 tbsp'},
+          {name:'red pepper flakes',cat:'spices',  qty:'1 tsp'},
+          {name:'parmesan cheese',  cat:'dairy',   qty:'¼ cup'},
+        ]},
+      { id:'d8', name:'Black Bean Tacos', prepTime:15, cookTime:15, totalTime:30,
+        diet:['vegan','vegetarian'], budget:'low', cost:4.5, servings:2,
+        desc:'Flavorful black bean tacos with creamy avocado, crunchy cabbage, and fresh salsa.',
+        ingredients:[
+          {name:'black beans',   cat:'protein',   qty:'2 cans'},
+          {name:'corn tortillas',cat:'grains',     qty:'8'},
+          {name:'avocado',       cat:'vegetables', qty:'1'},
+          {name:'red cabbage',   cat:'vegetables', qty:'1 cup'},
+          {name:'tomatoes',      cat:'vegetables', qty:'2'},
+          {name:'lime',          cat:'fruits',     qty:'2'},
+          {name:'cumin',         cat:'spices',     qty:'1 tsp'},
+          {name:'garlic powder', cat:'spices',     qty:'1 tsp'},
+          {name:'cilantro',      cat:'spices',     qty:'¼ cup'},
+          {name:'salsa',         cat:'others',     qty:'½ cup'},
+        ]},
+      { id:'d9', name:'Keto Cauliflower Fried Rice', prepTime:15, cookTime:20, totalTime:35,
+        diet:['keto','vegetarian'], budget:'low', cost:4.0, servings:2,
+        desc:'Low-carb fried rice made with riced cauliflower, colourful vegetables, and eggs.',
+        ingredients:[
+          {name:'cauliflower',  cat:'vegetables',qty:'1 head'},
+          {name:'eggs',         cat:'protein',   qty:'2'},
+          {name:'soy sauce',    cat:'spices',    qty:'3 tbsp'},
+          {name:'garlic',       cat:'spices',    qty:'3 cloves'},
+          {name:'ginger',       cat:'spices',    qty:'1 tsp'},
+          {name:'carrots',      cat:'vegetables',qty:'2'},
+          {name:'peas',         cat:'vegetables',qty:'½ cup'},
+          {name:'sesame oil',   cat:'others',    qty:'1 tbsp'},
+          {name:'green onions', cat:'vegetables',qty:'3 stalks'},
+        ]},
+      { id:'d10', name:'Baked Herb Chicken Thighs', prepTime:10, cookTime:40, totalTime:50,
+        diet:['non-vegetarian','keto','high-protein'], budget:'medium', cost:8.0, servings:2,
+        desc:'Juicy herb-marinated chicken thighs roasted golden with caramelised sweet potato.',
+        ingredients:[
+          {name:'chicken thighs',cat:'protein',   qty:'600g'},
+          {name:'garlic',        cat:'spices',    qty:'4 cloves'},
+          {name:'rosemary',      cat:'spices',    qty:'2 tsp'},
+          {name:'thyme',         cat:'spices',    qty:'2 tsp'},
+          {name:'olive oil',     cat:'others',    qty:'3 tbsp'},
+          {name:'lemon',         cat:'fruits',    qty:'1'},
+          {name:'sweet potato',  cat:'vegetables',qty:'2'},
+          {name:'salt',          cat:'spices',    qty:'to taste'},
+          {name:'black pepper',  cat:'spices',    qty:'to taste'},
+        ]},
+    ],
+  };
+
+  /* =====================================================
+     SUBSTITUTIONS MAP
+  ===================================================== */
+  const SUBS = {
+    'eggs':            { subs:['Flax egg (1 tbsp ground flax + 3 tbsp water)','Chia egg (1 tbsp chia + 3 tbsp water)','Aquafaba (3 tbsp per egg)','Commercial egg replacer'], note:'Great for vegan and egg-free diets' },
+    'butter':          { subs:['Coconut oil (equal amount)','Vegan butter','Olive oil (¾ of butter amount)','Avocado oil'], note:'Coconut oil is best for baking' },
+    'heavy cream':     { subs:['Full-fat coconut milk','Coconut cream','Cashew cream (blended)','Oat cream'], note:'Coconut cream adds a subtle sweetness' },
+    'milk':            { subs:['Almond milk','Oat milk','Soy milk','Coconut milk'], note:'Plant-based alternatives for dairy-free diets' },
+    'chicken breast':  { subs:['Firm tofu (pressed & marinated)','Tempeh','Shredded jackfruit','Seitan strips','Chickpeas'], note:'Tofu or tempeh for vegetarian/vegan' },
+    'chicken thighs':  { subs:['Firm tofu (pressed)','Portobello mushrooms','Cauliflower steaks','Tempeh'], note:'Marinate well to mimic flavour' },
+    'ground beef':     { subs:['Lentils (cooked)','Black beans','Tempeh crumbles','Plant-based mince'], note:'Lentils are the most budget-friendly' },
+    'beef sirloin':    { subs:['Portobello mushroom strips','Seitan strips','Jackfruit','King oyster mushrooms'], note:'Mushrooms provide a similar umami depth' },
+    'bacon':           { subs:['Turkey bacon','Tempeh bacon (vegan)','Coconut bacon strips','Smoked tofu strips'], note:'Tempeh bacon for plant-based diets' },
+    'salmon fillets':  { subs:['Tuna steaks','Cod or halibut','Mahi-mahi','Tofu steak + nori sheets (vegan)'], note:'All provide comparable protein content' },
+    'shrimp':          { subs:['King oyster mushrooms (sliced)','Hearts of palm','Zucchini bites','Canned jackfruit'], note:'King oyster mushrooms best mimic texture' },
+    'Greek yogurt':    { subs:['Coconut yogurt','Soy yogurt','Cashew cream','Silken tofu (blended)'], note:'Plant-based yogurts for vegan diets' },
+    'parmesan cheese': { subs:['Nutritional yeast (3 tbsp = ¼ cup)','Vegan parmesan (cashew-based)','Pecorino Romano'], note:'Nutritional yeast for dairy-free option' },
+    'soy sauce':       { subs:['Coconut aminos (soy-free)','Tamari (gluten-free)','Liquid aminos','Worcestershire sauce'], note:'Coconut aminos for soy-free diets' },
+    'basmati rice':    { subs:['Cauliflower rice (keto)','Quinoa (high-protein)','Brown rice','Farro or barley'], note:'Cauliflower rice for keto; quinoa for protein' },
+    'avocado':         { subs:['Hummus (spread)','Tahini drizzle','Cream cheese','Mashed edamame'], note:'Hummus offers a similar creamy texture' },
+    'coconut milk':    { subs:['Oat cream','Cashew milk (thickened)','Soy cream','Evaporated milk (non-vegan)'], note:'Cashew milk for closest flavour match' },
+    'cheddar cheese':  { subs:['Nutritional yeast','Vegan cheddar','Gouda','Gruyère'], note:'Nutritional yeast for dairy-free option' },
+    'mozzarella cheese':{ subs:['Vegan mozzarella','Cashew cheese','Silken tofu (sliced)','Provolone'], note:'Many vegan brands melt well' },
+  };
+
+  /* =====================================================
+     BUDGET CONFIG
+  ===================================================== */
+  const BUDGET = {
+    low:    { label:'Low Budget',    maxPerPersonDay:15, color:'#10b981', order:0 },
+    medium: { label:'Medium Budget', maxPerPersonDay:35, color:'#f59e0b', order:1 },
+    high:   { label:'High Budget',   maxPerPersonDay:80, color:'#8b5cf6', order:2 },
+  };
+
+  /* =====================================================
+     CATEGORY CONFIG
+  ===================================================== */
+  const CATS = {
+    vegetables:{ label:'🥦 Vegetables', color:'#10b981' },
+    fruits:    { label:'🍎 Fruits',     color:'#f59e0b' },
+    dairy:     { label:'🥛 Dairy',      color:'#06b6d4' },
+    grains:    { label:'🌾 Grains',     color:'#a78bfa' },
+    protein:   { label:'🥩 Protein',    color:'#f87171' },
+    spices:    { label:'🌶️ Spices',     color:'#fb923c' },
+    others:    { label:'🛒 Others',     color:'#94a3b8' },
+  };
+
+  /* =====================================================
+     UTILITIES
+  ===================================================== */
+  function sanitize(str) {
+    if (typeof str !== 'string') return '';
+    return str.replace(/[<>&"'`]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#x27;','`':'&#x60;'}[c]));
+  }
+  function norm(s) { return s.toLowerCase().trim().replace(/\s+/g,' ').replace(/s$/,''); }
+  function parseOwned(txt) {
+    if (!txt || !txt.trim()) return new Set();
+    return new Set(txt.split(',').map(s => norm(s)).filter(Boolean));
+  }
+  function hasIngredient(ingName, ownedSet) {
+    const n = norm(ingName);
+    for (const o of ownedSet) { if (n.includes(o) || o.includes(n)) return true; }
+    return false;
+  }
+  function fmt$(n) { return '$' + n.toFixed(2); }
+  function fmtTime(h, m) { const h12 = h % 12 || 12; return `${h12}:${String(m).padStart(2,'0')} ${h < 12 ? 'AM' : 'PM'}`; }
+  function addMins([h, m], mins) { const t = h*60 + m + mins; return [Math.floor(t/60) % 24, t % 60]; }
+  function el(tag, cls, txt) { const e = document.createElement(tag); if (cls) e.className = cls; if (txt !== undefined) e.textContent = txt; return e; }
+
+  /* =====================================================
+     MEAL SELECTION ENGINE
+  ===================================================== */
+  function budgetOrder(b) { return BUDGET[b] ? BUDGET[b].order : 0; }
+
+  function selectMeals({ mealTypes, diet, budget, cookTime }) {
+    const n = mealTypes.length || 1;
+    const maxPerMeal = Math.max(Math.floor(cookTime / n), 20);
+    const result = {};
+
+    for (const type of mealTypes) {
+      const pool = DB[type] || [];
+      // Primary filter: diet + budget + time
+      let eligible = pool.filter(m =>
+        m.diet.includes(diet) &&
+        budgetOrder(m.budget) <= budgetOrder(budget) &&
+        m.totalTime <= maxPerMeal
+      );
+      // Fallback 1: relax time
+      if (!eligible.length) eligible = pool.filter(m => m.diet.includes(diet) && budgetOrder(m.budget) <= budgetOrder(budget));
+      // Fallback 2: relax budget
+      if (!eligible.length) eligible = pool.filter(m => m.diet.includes(diet));
+      // Fallback 3: any meal of that type
+      if (!eligible.length) eligible = pool;
+      result[type] = eligible[Math.floor(Math.random() * eligible.length)] || null;
+    }
+    return result;
+  }
+
+  /* =====================================================
+     GROCERY LIST
+  ===================================================== */
+  function makeGroceryList(meals, owned, people) {
+    const map = {};
+    for (const meal of Object.values(meals)) {
+      if (!meal) continue;
+      for (const ing of meal.ingredients) {
+        if (hasIngredient(ing.name, owned)) continue;
+        if (!map[ing.name]) map[ing.name] = { cat: ing.cat, qty: ing.qty };
+      }
+    }
+    const byCat = {};
+    for (const [name, data] of Object.entries(map)) {
+      if (!byCat[data.cat]) byCat[data.cat] = [];
+      byCat[data.cat].push({ name, qty: data.qty });
+    }
+    return byCat;
+  }
+
+  /* =====================================================
+     SUBSTITUTIONS
+  ===================================================== */
+  function makeSubstitutions(meals) {
+    const result = []; const seen = new Set();
+    for (const meal of Object.values(meals)) {
+      if (!meal) continue;
+      for (const ing of meal.ingredients) {
+        if (SUBS[ing.name] && !seen.has(ing.name)) {
+          seen.add(ing.name);
+          result.push({ original: ing.name, ...SUBS[ing.name] });
+        }
+      }
+    }
+    return result;
+  }
+
+  /* =====================================================
+     BUDGET ANALYSIS
+  ===================================================== */
+  function analyzeBudget(meals, people, budget) {
+    const cfg = BUDGET[budget];
+    const dailyBudget = cfg.maxPerPersonDay * people;
+    let total = 0;
+    const costs = [];
+    for (const [type, meal] of Object.entries(meals)) {
+      if (!meal) continue;
+      const cost = (meal.cost / meal.servings) * people;
+      total += cost;
+      costs.push({ type, name: meal.name, cost });
+    }
+    const pct = (total / dailyBudget) * 100;
+    const { verdict, cls } = pct <= 80
+      ? { verdict:'✅ Well Within Budget',       cls:'verdict-ok' }
+      : pct <= 105
+      ? { verdict:'⚠️ Slightly Over Budget',     cls:'verdict-close' }
+      : { verdict:'❌ Exceeds Budget',            cls:'verdict-over' };
+    return { total, dailyBudget, pct: Math.min(pct, 100), verdict, cls, costs, cfg, people };
+  }
+
+  /* =====================================================
+     TIMELINE
+  ===================================================== */
+  function makeTimeline(meals) {
+    const starts = { breakfast:[7,30], lunch:[12,0], dinner:[18,30] };
+    const labels  = { breakfast:{ label:'Breakfast', emoji:'🌅' }, lunch:{ label:'Lunch', emoji:'☀️' }, dinner:{ label:'Dinner', emoji:'🌙' }};
+    const groups = [];
+    for (const [type, meal] of Object.entries(meals)) {
+      if (!meal) continue;
+      const tasks = []; let cur = starts[type];
+      tasks.push({ time: fmtTime(...cur), task: `Gather all ingredients for ${meal.name}` });
+      cur = addMins(cur, 5);
+      if (meal.ingredients.some(i => i.cat === 'vegetables')) {
+        tasks.push({ time: fmtTime(...cur), task: 'Wash and rinse all vegetables' });
+        cur = addMins(cur, 5);
+      }
+      if (meal.prepTime > 5) {
+        tasks.push({ time: fmtTime(...cur), task: `Chop, measure, and prep ingredients (${meal.prepTime} min)` });
+        cur = addMins(cur, meal.prepTime);
+      }
+      if (meal.cookTime > 0) {
+        tasks.push({ time: fmtTime(...cur), task: `Cook ${meal.name} (${meal.cookTime} min)` });
+        cur = addMins(cur, meal.cookTime);
+      }
+      tasks.push({ time: fmtTime(...cur), task: `Plate and serve ${meal.name}` });
+      groups.push({ ...labels[type], mealName: meal.name, tasks });
+    }
+    return groups;
+  }
+
+  /* =====================================================
+     RENDERERS
+  ===================================================== */
+  function renderMeals(meals, owned) {
+    const wrap = document.getElementById('mealPlanOut');
+    wrap.innerHTML = '';
+    const badges = { breakfast:'🌅 Breakfast', lunch:'☀️ Lunch', dinner:'🌙 Dinner' };
+    for (const [type, meal] of Object.entries(meals)) {
+      if (!meal) continue;
+      const card = el('article', `glass meal-card ${type}`);
+      const badge = el('div', 'meal-badge'); badge.textContent = badges[type]; card.appendChild(badge);
+      card.appendChild(el('h3', 'meal-name', meal.name));
+      card.appendChild(el('p', 'meal-desc', meal.desc));
+
+      const meta = el('div', 'meal-meta');
+      const addMeta = (icon, txt) => { const d = el('div','meal-meta-item'); d.innerHTML = `<span>${icon}</span><span>${txt}</span>`; meta.appendChild(d); };
+      addMeta('⏱️', `${meal.totalTime} min total`);
+      addMeta('🔪', `${meal.prepTime} min prep`);
+      if (meal.cookTime > 0) addMeta('🍳', `${meal.cookTime} min cook`);
+      card.appendChild(meta);
+
+      card.appendChild(el('p', 'ing-label', 'Ingredients'));
+      const tags = el('div', 'ing-tags');
+      for (const ing of meal.ingredients) {
+        const have = hasIngredient(ing.name, owned);
+        const tag = el('span', `ing-tag ${have ? 'have' : 'need'}`, `${have ? '✓ ' : ''}${ing.name} (${ing.qty})`);
+        tag.title = have ? 'You have this!' : 'Add to grocery list';
+        tags.appendChild(tag);
+      }
+      card.appendChild(tags);
+      wrap.appendChild(card);
+    }
+  }
+
+  function renderGrocery(list) {
+    const wrap = document.getElementById('groceryOut');
+    wrap.innerHTML = '';
+    const allItems = Object.values(list).flat();
+    if (!allItems.length) {
+      const e = el('div','empty'); e.innerHTML = '<div class="empty-icon">🎉</div><p>You already have everything! No shopping needed.</p>'; wrap.appendChild(e); return;
+    }
+    const stats = el('div','grocery-stats');
+    const pill  = el('span','grocery-pill',`${allItems.length} item${allItems.length !== 1 ? 's' : ''} to buy`);
+    stats.appendChild(pill); wrap.appendChild(stats);
+
+    const grid = el('div','grocery-grid');
+    for (const catKey of Object.keys(CATS)) {
+      const items = list[catKey];
+      if (!items || !items.length) continue;
+      const cfg = CATS[catKey];
+      const catCard = el('div','grocery-cat');
+      const title = el('h3','grocery-cat-title', cfg.label);
+      title.style.color = cfg.color; catCard.appendChild(title);
+      for (const item of items) {
+        const row = el('div','grocery-item');
+        const dot = el('span','g-dot'); dot.style.background = cfg.color;
+        const txt = el('span'); txt.textContent = `${item.name} — ${item.qty}`;
+        row.appendChild(dot); row.appendChild(txt); catCard.appendChild(row);
+      }
+      grid.appendChild(catCard);
+    }
+    wrap.appendChild(grid);
+  }
+
+  function renderSubs(subs) {
+    const wrap = document.getElementById('subOut');
+    wrap.innerHTML = '';
+    if (!subs.length) {
+      const e = el('div','empty'); e.innerHTML = '<div class="empty-icon">✨</div><p>No substitution suggestions for your current meal plan.</p>'; wrap.appendChild(e); return;
+    }
+    const grid = el('div','sub-grid');
+    for (const s of subs) {
+      const card = el('div','sub-card');
+      card.appendChild(el('div','sub-original', `🔄 ${s.original}`));
+      card.appendChild(el('p','sub-note', s.note));
+      const list = el('div','sub-list');
+      for (const sub of s.subs) {
+        const item = el('div','sub-item');
+        item.appendChild(el('span','sub-dot'));
+        item.appendChild(el('span', '', sub));
+        list.appendChild(item);
+      }
+      card.appendChild(list);
+      grid.appendChild(card);
+    }
+    wrap.appendChild(grid);
+  }
+
+  function renderBudget(analysis) {
+    const wrap = document.getElementById('budgetOut');
+    wrap.innerHTML = '';
+
+    // Stats
+    const stats = el('div','budget-stats');
+    const addStat = (val, lbl, color) => {
+      const d = el('div','bstat');
+      const v = el('div','bstat-val', val); v.style.color = color;
+      d.appendChild(v); d.appendChild(el('div','bstat-lbl',lbl));
+      stats.appendChild(d);
+    };
+    addStat(fmt$(analysis.total), 'Estimated Daily Cost', analysis.cfg.color);
+    addStat(fmt$(analysis.dailyBudget), `${analysis.cfg.label} Limit`, '#94a3b8');
+    addStat(String(analysis.people), 'People', '#a78bfa');
+    addStat(fmt$(analysis.total / analysis.people), 'Per Person', '#06b6d4');
+    wrap.appendChild(stats);
+
+    // Bar
+    const track = el('div','bar-track');
+    const fill  = el('div','bar-fill');
+    fill.style.background = analysis.cfg.color;
+    track.appendChild(fill); wrap.appendChild(track);
+    requestAnimationFrame(() => requestAnimationFrame(() => { fill.style.width = analysis.pct + '%'; }));
+
+    // Verdict
+    const verdictEl = el('div', `budget-verdict ${analysis.cls}`, analysis.verdict);
+    wrap.appendChild(verdictEl);
+
+    // Breakdown
+    wrap.appendChild(el('p','budget-breakdown-label','Meal Cost Breakdown'));
+    const clist = el('div','cost-list');
+    const icons = { breakfast:'🌅', lunch:'☀️', dinner:'🌙' };
+    for (const c of analysis.costs) {
+      const row = el('div','cost-item');
+      row.appendChild(el('span','', `${icons[c.type] || '🍽️'} ${c.name}`));
+      row.appendChild(el('span','cost-price', fmt$(c.cost)));
+      clist.appendChild(row);
+    }
+    wrap.appendChild(clist);
+  }
+
+  function renderTimeline(groups) {
+    const wrap = document.getElementById('tlOut');
+    wrap.innerHTML = '';
+    if (!groups.length) {
+      const e = el('div','empty'); e.innerHTML = '<div class="empty-icon">📅</div><p>No timeline to display.</p>'; wrap.appendChild(e); return;
+    }
+    const tl = el('div','timeline');
+    for (const g of groups) {
+      const grp = el('div','tl-group');
+      const gtitle = el('h3','tl-group-title', `${g.emoji} ${g.label} — ${g.mealName}`);
+      grp.appendChild(gtitle);
+      for (const t of g.tasks) {
+        const item = el('div','tl-item');
+        item.appendChild(el('span','tl-time', t.time));
+        item.appendChild(el('span','tl-task', t.task));
+        grp.appendChild(item);
+      }
+      tl.appendChild(grp);
+    }
+    wrap.appendChild(tl);
+  }
+
+  /* =====================================================
+     VALIDATION
+  ===================================================== */
+  function showErr(msg) { const e = document.getElementById('errMsg'); e.textContent = msg; e.classList.add('show'); }
+  function clearErr()  { const e = document.getElementById('errMsg'); e.textContent = ''; e.classList.remove('show'); }
+
+  function getFormData() {
+    const people   = parseInt(document.getElementById('numPeople').value, 10);
+    const cookTime = parseInt(document.getElementById('cookTime').value, 10);
+    const meals    = [...document.querySelectorAll('input[name="meals"]:checked')].map(c => c.value);
+    if (isNaN(people) || people < 1 || people > 50)    { showErr('Please enter a valid number of people (1–50).'); return null; }
+    if (isNaN(cookTime) || cookTime < 20 || cookTime > 600) { showErr('Please enter a valid cooking time (20–600 minutes).'); return null; }
+    if (!meals.length) { showErr('Please select at least one meal type.'); return null; }
+    clearErr();
+    return {
+      people,
+      budget:   document.getElementById('budgetLevel').value,
+      cookTime,
+      diet:     document.getElementById('dietPref').value,
+      ownedTxt: document.getElementById('avIngredients').value,
+      mealTypes: meals,
+    };
+  }
+
+  /* =====================================================
+     MAIN HANDLER
+  ===================================================== */
+  function handleGenerate() {
+    const data = getFormData();
+    if (!data) return;
+    const btn = document.getElementById('genBtn');
+    const txt = document.getElementById('genBtnTxt');
+    btn.classList.add('busy');
+    txt.textContent = 'Generating…';
+
+    setTimeout(() => {
+      try {
+        const owned  = parseOwned(data.ownedTxt);
+        const meals  = selectMeals({ mealTypes: data.mealTypes, diet: data.diet, budget: data.budget, cookTime: data.cookTime });
+        const grocery = makeGroceryList(meals, owned, data.people);
+        const subs    = makeSubstitutions(meals);
+        const budget  = analyzeBudget(meals, data.people, data.budget);
+        const timeline= makeTimeline(meals);
+
+        renderMeals(meals, owned);
+        renderGrocery(grocery);
+        renderSubs(subs);
+        renderBudget(budget);
+        renderTimeline(timeline);
+
+        const res = document.getElementById('results');
+        res.classList.add('show');
+        setTimeout(() => res.scrollIntoView({ behavior:'smooth', block:'start' }), 80);
+      } catch(err) {
+        console.error(err);
+        showErr('Something went wrong. Please try again.');
+      } finally {
+        btn.classList.remove('busy');
+        txt.textContent = 'Regenerate Plan';
+      }
+    }, 650);
+  }
+
+  /* =====================================================
+     INIT
+  ===================================================== */
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('genBtn').addEventListener('click', handleGenerate);
+    document.getElementById('plannerForm').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') { e.preventDefault(); handleGenerate(); }
+    });
+  });
+  </script>
+</body>
+</html>
