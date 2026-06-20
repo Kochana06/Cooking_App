@@ -1,19 +1,26 @@
-Cooking To-Do Planner
+🍳 Cooking To-Do Planner
 
-A simple web application that helps users create a personalized daily cooking plan based on their budget, dietary preferences, available ingredients, and cooking time.
+A lightweight and responsive web application that helps users plan their daily meals, manage groceries, track budgets, and organize cooking tasks—all in one place.
 
-Features
-Generate Breakfast, Lunch, and Dinner plans
-Create a smart grocery list
-Suggest ingredient substitutions
-Analyze budget feasibility
-Generate a cooking to-do timeline
-Responsive and user-friendly design
-Technologies Used
+✨ Features
+🥗 Personalized meal recommendations
+🛒 Automatic grocery list generation
+🔄 Ingredient substitution suggestions
+💰 Budget feasibility analysis
+📋 Cooking task timeline
+📱 Fully responsive design
+🌙 Modern dark-themed UI
+🚀 Tech Stack
 HTML5
 CSS3
-JavaScript (Vanilla JS)
-How to Run
-Download or clone the project.
-Open index.html in your browser.
-Enter your preferences and click Generate Plan.
+Vanilla JavaScript
+📸 Application Workflow
+Enter cooking preferences and available ingredients.
+Select dietary requirements and budget.
+Click Generate Plan.
+View:
+Meal Plan
+Grocery List
+Ingredient Substitutions
+Budget Analysis
+Cooking Timeline
